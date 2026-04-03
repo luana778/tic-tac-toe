@@ -1,15 +1,10 @@
-import express from "express";
+const express = require("express");
+const { rooms } = require("../rooms/roomManager");
+
 const router = express.Router();
 
-let rooms;
-export const setRoomsReference = (roomsRef) => { rooms = roomsRef; };
-
-router.get("/", (req, res) => {
-  const roomList = Object.keys(rooms).map(roomId => ({
-    id: roomId,
-    players: rooms[roomId].players.map(p => p.username),
-    spectators: rooms[roomId].spectators.map(s => s.username)
-  }));
-  res.json(roomList);
+router.get("/rooms", (req, res) => {
+  res.json(Object.values(rooms)); // ✅ FULL ROOM OBJECT
 });
-export default router;
+
+module.exports = router;

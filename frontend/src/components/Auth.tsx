@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
 import type { User } from "../types";
+import { signIn, signUp } from "../services/authApi";
 import "./Auth.css";
-
 
 interface Props {
   onLogin: (user: User) => void;
@@ -12,31 +11,56 @@ const Auth: React.FC<Props> = ({ onLogin }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isSignup, setIsSignup] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async () => {
+    if (!username || !password) {
+      setError("All fields required");
+      return;
+    }
+
     try {
-      const url = isSignup ? "http://192.168.137.28:5137/signup" : "http://192.168.137.28:5137/signin";
-      const res = await axios.post(url, { username, password });
-      if (res.data.success) onLogin({ id: res.data.id, username: res.data.username });
-      else alert(res.data.message);
-    } catch (err) {
-      console.error(err);
-      alert("Server error");
+      const { data } = isSignup
+        ? await signUp(username, password)
+        : await signIn(username, password);
+
+      if (data.success) {
+        onLogin({ id: data.id, username: data.username });
+      } else {
+        setError(data.message);
+      }
+    } catch {
+      setError("Server error");
     }
   };
 
   return (
     <div className="auth-container">
       <div className="auth-box">
-        <h2 className="auth-title">{isSignup ? "Sign Up" : "Sign In"}</h2>
-        <input className="auth-input" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
-        <input className="auth-input" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
-        <button className="auth-button" onClick={handleSubmit}>{isSignup ? "Sign Up" : "Sign In"}</button>
-        <div className="auth-toggle">
-          <button className="toggle-button" onClick={() => setIsSignup(!isSignup)}>
-            {isSignup ? "Have an account? Sign In" : "No account? Sign Up"}
-          </button>
-        </div>
+        <h2>{isSignup ? "Sign Up" : "Sign In"}</h2>
+
+        {error && <p className="auth-error">{error}</p>}
+
+        <input
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Username"
+        />
+
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+        />
+
+        <button onClick={handleSubmit}>
+          {isSignup ? "Sign Up" : "Sign In"}
+        </button>
+
+        <button onClick={() => setIsSignup(!isSignup)}>
+          {isSignup ? "Switch to Sign In" : "Switch to Sign Up"}
+        </button>
       </div>
     </div>
   );

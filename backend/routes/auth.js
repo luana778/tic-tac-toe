@@ -1,37 +1,35 @@
-import express from "express";
-import bcrypt from "bcrypt";
-import { db } from "../config/db.js";
+const express = require("express");
+const bcrypt = require("bcrypt");
+const { createUser, getUserByUsername } = require("../models/userModel");
 
 const router = express.Router();
 
 router.post("/signup", async (req, res) => {
   const { username, password } = req.body;
-  try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const [result] = await db.query(
-      "INSERT INTO users (username, password) VALUES (?, ?)",
-      [username, hashedPassword]
-    );
-    res.json({ success: true, id: result.insertId, username });
-  } catch (err) {
-    console.log(err);
-    res.status(400).json({ success: false, message: "Username already successful" });
+
+  const exists = await getUserByUsername(username);
+  if (exists) {
+    return res.json({ success: false, message: "Username exists" });
   }
+
+  const id = await createUser(username, password);
+  res.json({ success: true, id, username });
 });
 
 router.post("/signin", async (req, res) => {
   const { username, password } = req.body;
-  try {
-    const [rows] = await db.query("SELECT * FROM users WHERE username = ?", [username]);
-    const user = rows[0];
-    if (!user) return res.status(400).json({ success: false, message: "Username not found" });
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(400).json({ success: false, message: "Wrong password" });
-    res.json({ success: true, id: user.id, username: user.username });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ success: false, message: "Server error" });
+
+  const user = await getUserByUsername(username);
+  if (!user) {
+    return res.json({ success: false, message: "User not found" });
   }
+
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) {
+    return res.json({ success: false, message: "Wrong password" });
+  }
+
+  res.json({ success: true, id: user.id, username });
 });
 
-export default router;
+module.exports = router;

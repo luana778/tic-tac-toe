@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-
-interface Room {
-  id: string;
-  players: any[];
-  spectators: any[];
-}
+import { getRooms } from "../services/roomApi";
+import type { Room } from "../types";
+import "./RoomList.css";
 
 interface Props {
   onJoin: (roomId: string) => void;
@@ -13,24 +9,25 @@ interface Props {
 
 const RoomList: React.FC<Props> = ({ onJoin }) => {
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [newRoomId, setNewRoomId] = useState("");
-
-  const fetchRooms = async () => {
-    const res = await axios.get("http://192.168.137.28:5137/rooms");
-    setRooms(res.data);
-  };
+  const [roomId, setRoomId] = useState("");
 
   useEffect(() => {
-    fetchRooms();
-    const interval = setInterval(fetchRooms, 2000);
+    const fetch = async () => {
+      const { data } = await getRooms();
+      setRooms(data);
+    };
+
+    fetch();
+    const interval = setInterval(fetch, 3000);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div style={{ padding: 20 }}>
+    <div className="room-container">
       <h2>Rooms</h2>
+
       <ul>
-        {rooms.map(r => (
+        {rooms.map((r) => (
           <li key={r.id}>
             {r.id} ({r.players.length}/2)
             <button onClick={() => onJoin(r.id)}>Join</button>
@@ -39,8 +36,14 @@ const RoomList: React.FC<Props> = ({ onJoin }) => {
       </ul>
 
       <h3>Create Room</h3>
-      <input placeholder="Room ID" value={newRoomId} onChange={e => setNewRoomId(e.target.value)} />
-      <button onClick={() => onJoin(newRoomId)}>Create & Join</button>
+
+      <input
+        value={roomId}
+        onChange={(e) => setRoomId(e.target.value)}
+        placeholder="Room ID"
+      />
+
+      <button onClick={() => onJoin(roomId)}>Create</button>
     </div>
   );
 };
