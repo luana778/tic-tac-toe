@@ -1,4 +1,3 @@
-// client/src/pages/Game.tsx
 import React, { useState, useEffect } from "react";
 import { socket } from "../socket";
 import type { User, Player, MoveEvent } from "../types";
@@ -21,17 +20,28 @@ const Game: React.FC<Props> = ({ user, roomId }) => {
   const checkWinner = (b: (null | "X" | "O")[]): "X" | "O" | null => {
     console.log(b);
     const lines = [
-      [0, 1, 2], [3, 4, 5], [6, 7, 8],
-      [0, 3, 6], [1, 4, 7], [2, 5, 8],
-      [0, 4, 8], [2, 4, 6]
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6],
     ];
-    for (let [a, b1, c] of lines) if (b[a] && b[a] === b[b1] && b[a] === b[c]) return b[a];
+    for (let [a, b1, c] of lines)
+      if (board[a] && board[a] === board[b1] && b[a] === board[c]) 
+        return [a];
     return null;
   };
 
   useEffect(() => {
     // Join room
-    socket.emit("joinRoom", { roomId, userId: user.id, username: user.username });
+    socket.emit("joinRoom", {
+      roomId,
+      userId: user.id,
+      username: user.username,
+    });
 
     // Update room state
     socket.on("updateRoom", (room: any) => {
@@ -48,7 +58,7 @@ const Game: React.FC<Props> = ({ user, roomId }) => {
 
     // Apply move
     socket.on("move", ({ index, symbol }: MoveEvent) => {
-      setBoard(prev => {
+      setBoard((prev) => {
         const b = [...prev];
         b[index] = symbol;
 
@@ -57,14 +67,14 @@ const Game: React.FC<Props> = ({ user, roomId }) => {
           setGameOver(true);
           setWinner(win || "Draw");
           socket.emit("gameResult", {
-            playerX: players.find(p => p.symbol === "X")?.userId,
-            playerO: players.find(p => p.symbol === "O")?.userId,
-            winner: win ? user.id : null
+            playerX: players.find((p) => p.symbol === "X")?.userId,
+            playerO: players.find((p) => p.symbol === "O")?.userId,
+            winner: win ? user.id : null,
           });
         }
         return b;
       });
-      setTurn(prev => (prev === "X" ? "O" : "X"));
+      setTurn((prev) => (prev === "X" ? "O" : "X"));
     });
 
     // Reset game
@@ -82,7 +92,7 @@ const Game: React.FC<Props> = ({ user, roomId }) => {
     };
   }, [roomId, user.id]);
 
-  const isSpectator = !players.some(p => p.userId === user.id);
+  const isSpectator = !players.some((p) => p.userId === user.id);
 
   const handleClick = (i: number) => {
     if (board[i] || gameOver || turn !== mySymbol || isSpectator) return;
@@ -96,9 +106,9 @@ const Game: React.FC<Props> = ({ user, roomId }) => {
       setGameOver(true);
       setWinner(win || "Draw");
       socket.emit("gameResult", {
-        playerX: players.find(p => p.symbol === "X")?.userId,
-        playerO: players.find(p => p.symbol === "O")?.userId,
-        winner: win ? user.id : null
+        playerX: players.find((p) => p.symbol === "X")?.userId,
+        playerO: players.find((p) => p.symbol === "O")?.userId,
+        winner: win ? user.id : null,
       });
     }
 
@@ -110,44 +120,60 @@ const Game: React.FC<Props> = ({ user, roomId }) => {
 
   return (
     <div className="game-container">
-    <h2>Room: {roomId}</h2>
-    <h3 className="status">
-      {isSpectator ? "Spectator Mode" : `You are ${mySymbol} | Turn: ${turn}`}
-    </h3>
-  
-    <div className="board">
-      {board.map((cell, i) => (
-        <button
-          key={i}
-          onClick={() => handleClick(i)}
-          disabled={cell || gameOver || turn !== mySymbol || isSpectator}
-          className={`cell ${cell ? cell.toLowerCase() : ""}`}
-        >
-          {cell}
-        </button>
-      ))}
-    </div>
-  
-    {gameOver && (
-      <h3 className={`winner ${winner === "Draw" ? "draw" : winner === mySymbol ? "" : "loser"}`}>
-        {winner === "Draw" ? "Draw" : winner === mySymbol ? "You won!" : "You lost!"}
+      <h2>Room: {roomId}</h2>
+      <h3 className="status">
+        {isSpectator ? "Spectator Mode" : `You are ${mySymbol} | Turn: ${turn}`}
       </h3>
-    )}
-  
-    <button className="reset-btn" onClick={handleReset}>
-      Reset Game
-    </button>
-  
-    <div className="players">
-      <h4>Players:</h4>
-      <ul>{players.map(p => <li key={p.userId}>{p.username} ({p.symbol})</li>)}</ul>
+
+      <div className="board">
+        {board.map((cell, i) => (
+          <button
+            key={i}
+            onClick={() => handleClick(i)}
+            disabled={cell || gameOver || turn !== mySymbol || isSpectator}
+            className={`cell ${cell ? cell.toLowerCase() : ""}`}
+          >
+            {cell}
+          </button>
+        ))}
+      </div>
+
+      {gameOver && (
+        <h3
+          className={`winner ${winner === "Draw" ? "draw" : winner === mySymbol ? "" : "loser"}`}
+        >
+          {winner === "Draw"
+            ? "Draw"
+            : winner === mySymbol
+              ? "You won!"
+              : "You lost!"}
+        </h3>
+      )}
+
+      <button className="reset-btn" onClick={handleReset}>
+        Reset Game
+      </button>
+
+      <div className="players">
+        <h4>Players:</h4>
+        <ul>
+          {players.map((p) => (
+            <li key={p.userId}>
+              {p.username} ({p.symbol})
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="spectators">
+        <h4>Spectators:</h4>
+        <ul>
+          {spectators.map((s) => (
+            <li key={s.userId}>{s.username}</li>
+          ))}
+        </ul>
+      </div>
     </div>
-  
-    <div className="spectators">
-      <h4>Spectators:</h4>
-      <ul>{spectators.map(s => <li key={s.userId}>{s.username}</li>)}</ul>
-    </div>
-  </div>
   );
 };
 

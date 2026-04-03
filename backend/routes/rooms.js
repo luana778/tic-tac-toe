@@ -1,9 +1,7 @@
 import express from "express";
-
 const router = express.Router();
 
 let rooms;
-
 export const setRoomsReference = (roomsRef) => { rooms = roomsRef; };
 
 router.get("/", (req, res) => {
@@ -14,5 +12,4 @@ router.get("/", (req, res) => {
   }));
   res.json(roomList);
 });
-
 export default router;

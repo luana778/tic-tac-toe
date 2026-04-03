@@ -3,7 +3,7 @@ const express = require("express");
 const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
-const { createUser, getUserByUsername, saveGameResult } = require("./models");
+const { createUser, getUserByUsername, saveGameResult } = require("./models/models");
 const bcrypt = require("bcrypt");
 
 const app = express();
@@ -13,12 +13,8 @@ app.use(express.json());
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
-// In-memory rooms structure
 const rooms = {};
 
-/**
- * REST API - Signup
- */
 app.post("/signup", async (req, res) => {
   const { username, password } = req.body;
   try {
@@ -44,22 +40,13 @@ app.post("/signin", async (req, res) => {
   }
 });
 
-/**
- * REST API - Get list of rooms
- */
 app.get("/rooms", (req, res) => {
   res.json(Object.values(rooms));
 });
 
-/**
- * Socket.IO - Real-time multiplayer
- */
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  /**
-   * Join a room
-   */
   socket.on("joinRoom", ({ roomId, userId, username }) => {
     if (!rooms[roomId]) {
       rooms[roomId] = {
@@ -75,12 +62,10 @@ io.on("connection", (socket) => {
 
     const room = rooms[roomId];
 
-    // Assign symbol to player if less than 2 players
     if (room.players.length < 2) {
       const symbol = room.players.length === 0 ? "X" : "O";
       room.players.push({ socketId: socket.id, userId, username, symbol });
     } else {
-      // Spectator
       room.spectators.push({ socketId: socket.id, userId, username });
     }
 
@@ -88,30 +73,22 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("updateRoom", room);
   });
 
-  /**
-   * Relay moves
-   */
   socket.on("move", ({ roomId, index, symbol }) => {
     socket.to(roomId).emit("move", { index, symbol });
   });
 
-  /**
-   * Relay reset
-   */
+
   socket.on("resetGame", ({ roomId }) => {
     socket.to(roomId).emit("resetGame");
   });
 
-  /**
-   * Save game results to database
-   */
+
   socket.on("gameResult", async ({ playerX, playerO, winner }) => {
     await saveGameResult(playerX, playerO, winner);
   });
 
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
-    // Optional: remove player from rooms
   });
 });
 

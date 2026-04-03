@@ -1,6 +1,6 @@
 import express from "express";
 import bcrypt from "bcrypt";
-import { db } from "../db.js";
+import { db } from "../config/db.js";
 
 const router = express.Router();
 
@@ -15,21 +15,18 @@ router.post("/signup", async (req, res) => {
     res.json({ success: true, id: result.insertId, username });
   } catch (err) {
     console.log(err);
-    res.status(400).json({ success: false, message: "Username already exists" });
+    res.status(400).json({ success: false, message: "Username already successful" });
   }
 });
 
-// Sign In
 router.post("/signin", async (req, res) => {
   const { username, password } = req.body;
   try {
     const [rows] = await db.query("SELECT * FROM users WHERE username = ?", [username]);
     const user = rows[0];
-    if (!user) return res.status(400).json({ success: false, message: "User not found" });
-
+    if (!user) return res.status(400).json({ success: false, message: "Username not found" });
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(400).json({ success: false, message: "Incorrect password" });
-
+    if (!valid) return res.status(400).json({ success: false, message: "Wrong password" });
     res.json({ success: true, id: user.id, username: user.username });
   } catch (err) {
     console.log(err);

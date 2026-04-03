@@ -1,8 +1,8 @@
 // client/src/App.tsx
 import React, { useState } from "react";
-import Auth from "./pages/Auth";
-import RoomList from "./pages/RoomList";
-import Game from "./pages/Game";
+import Auth from "./components/Auth";
+import RoomList from "./components/RoomList";
+import Game from "./components/Game";
 import type { User } from "./types";
 
 const App: React.FC = () => {

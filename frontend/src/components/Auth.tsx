@@ -1,4 +1,3 @@
-// client/src/pages/Auth.tsx
 import React, { useState } from "react";
 import axios from "axios";
 import type { User } from "../types";
